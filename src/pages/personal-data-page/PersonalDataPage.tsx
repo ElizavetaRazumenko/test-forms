@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { FormField, GENDER_OPTIONS, ROUTES } from '../../constants/form.ts';
@@ -14,12 +14,13 @@ export const PersonalDataPage: React.FC = () => {
   const navigate = useNavigate();
   const { formValues, updateFormValues } = useLoanFormContext();
   const phoneInputRef = useRef<HTMLInputElement | null>(null);
+  const [isShakeActive, setIsShakeActive] = useState(false);
 
   const {
     control,
     register,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<PersonalDataValues>({
     resolver: zodResolver(personalDataSchema),
     mode: 'onChange',
@@ -37,13 +38,26 @@ export const PersonalDataPage: React.FC = () => {
     navigate(ROUTES.addressWork);
   };
 
+  const onInvalidSubmit = () => {
+    setIsShakeActive(false);
+
+    requestAnimationFrame(() => {
+      setIsShakeActive(true);
+    });
+  };
+
   return (
     <StepLayout title="Личные данные" step={1} totalSteps={3}>
-      <form className="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form
+        className={`form${isShakeActive ? ' form--shake' : ''}`}
+        onSubmit={handleSubmit(onSubmit, onInvalidSubmit)}
+        onAnimationEnd={() => setIsShakeActive(false)}
+        noValidate
+      >
         <Controller
           name={FormField.Phone}
           control={control}
-          render={({ field, fieldState }) => (
+          render={({ field }) => (
             <FormInput
               ref={(element) => {
                 field.ref(element);
@@ -56,7 +70,7 @@ export const PersonalDataPage: React.FC = () => {
               value={field.value}
               onBlur={field.onBlur}
               onChange={(event) => field.onChange(formatPhoneNumber(event.target.value))}
-              error={fieldState.isTouched ? errors.phone?.message : undefined}
+              error={errors.phone?.message}
             />
           )}
         />
@@ -91,7 +105,7 @@ export const PersonalDataPage: React.FC = () => {
         </label>
 
         <div className="form-actions form-actions--end">
-          <button type="submit" className="button button--primary" disabled={!isValid}>
+          <button type="submit" className="button button--primary">
             Далее
           </button>
         </div>

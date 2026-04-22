@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { FormField, ROUTES } from '../../constants/form.ts';
@@ -12,6 +12,7 @@ import { hasPersonalData } from './helpers.ts';
 
 export const AddressWorkPage: React.FC = () => {
   const navigate = useNavigate();
+  const [isShakeActive, setIsShakeActive] = useState(false);
   const {
     formValues,
     updateFormValues,
@@ -34,7 +35,7 @@ export const AddressWorkPage: React.FC = () => {
     getValues,
     register,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<AddressWorkValues>({
     resolver: zodResolver(addressWorkSchema),
     mode: 'onChange',
@@ -54,9 +55,22 @@ export const AddressWorkPage: React.FC = () => {
     navigate(ROUTES.personalData);
   };
 
+  const onInvalidSubmit = () => {
+    setIsShakeActive(false);
+
+    requestAnimationFrame(() => {
+      setIsShakeActive(true);
+    });
+  };
+
   return (
     <StepLayout title="Адрес и место работы" step={2} totalSteps={3}>
-      <form className="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form
+        className={`form${isShakeActive ? ' form--shake' : ''}`}
+        onSubmit={handleSubmit(onSubmit, onInvalidSubmit)}
+        onAnimationEnd={() => setIsShakeActive(false)}
+        noValidate
+      >
         <label className="field">
           <span>Место работы</span>
           <select className="form-input-field" {...register(FormField.WorkPlace)} disabled={isWorkPlacesLoading}>
@@ -86,7 +100,7 @@ export const AddressWorkPage: React.FC = () => {
           <button type="button" className="button button--ghost" onClick={handleBack}>
             Назад
           </button>
-          <button type="submit" className="button button--primary" disabled={!isValid}>
+          <button type="submit" className="button button--primary">
             Далее
           </button>
         </div>
