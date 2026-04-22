@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { FormField, ROUTES } from '../../constants/form.ts';
 import { useLoanFormContext } from '../../context/use-loan-form-context.ts';
 import { addressWorkSchema } from '../../schema/form.ts';
+import { FormInput } from '../../components/form-input/FormInput.tsx';
 import { StepLayout } from '../../components/step-layout/StepLayout.tsx';
 import type { AddressWorkValues } from './types.ts';
 import { hasPersonalData } from './helpers.ts';
@@ -30,12 +31,13 @@ export const AddressWorkPage: React.FC = () => {
   }, [formValues, loadWorkPlaces, navigate]);
 
   const {
+    getValues,
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<AddressWorkValues>({
     resolver: zodResolver(addressWorkSchema),
-    mode: 'onTouched',
+    mode: 'onChange',
     defaultValues: {
       workPlace: formValues.workPlace,
       address: formValues.address,
@@ -48,6 +50,7 @@ export const AddressWorkPage: React.FC = () => {
   };
 
   const handleBack = () => {
+    updateFormValues(getValues());
     navigate(ROUTES.personalData);
   };
 
@@ -56,7 +59,7 @@ export const AddressWorkPage: React.FC = () => {
       <form className="form" onSubmit={handleSubmit(onSubmit)} noValidate>
         <label className="field">
           <span>Место работы</span>
-          <select {...register(FormField.WorkPlace)} disabled={isWorkPlacesLoading}>
+          <select className="form-input-field" {...register(FormField.WorkPlace)} disabled={isWorkPlacesLoading}>
             <option value="">
               {isWorkPlacesLoading ? 'Загрузка...' : 'Выберите место работы'}
             </option>
@@ -66,23 +69,24 @@ export const AddressWorkPage: React.FC = () => {
               </option>
             ))}
           </select>
-          {errors.workPlace ? (
-            <span className="error">{errors.workPlace.message}</span>
-          ) : null}
+          <div className="form-input-error">  
+            {errors.workPlace ? <span className="error">{errors.workPlace.message}</span> : null}
+          </div>
           {workPlacesError ? <span className="error">{workPlacesError}</span> : null}
         </label>
 
-        <label className="field">
-          <span>Адрес проживания</span>
-          <input type="text" {...register(FormField.Address)} />
-          {errors.address ? <span className="error">{errors.address.message}</span> : null}
-        </label>
+        <FormInput
+          type="text"
+          label="Адрес проживания"
+          error={errors.address?.message}
+          {...register(FormField.Address)}
+        />
 
         <div className="form-actions">
           <button type="button" className="button button--ghost" onClick={handleBack}>
             Назад
           </button>
-          <button type="submit" className="button button--primary">
+          <button type="submit" className="button button--primary" disabled={!isValid}>
             Далее
           </button>
         </div>
